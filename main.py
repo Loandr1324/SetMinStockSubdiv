@@ -184,15 +184,30 @@ def concat_df (df1, df2):
     return df
 
 def transfer_MO (df):
-    print (df.head())
-    print (df.iloc[:5, 3:4])
+    #rint (df.head())
+    #print (df.iloc[:5, 5])
+
     # =ЕСЛИ(И(C3>0;C3<1);C3;ЕСЛИ(И(C3>=1;H3>=1);H3+ОСТАТ(C3;1);ЕСЛИ(H3=0;0,33;H3)))
-    mask_MO1 = (df.iloc[:, 5:6] > 0) == (df.iloc[:, 5:6] < 1)
-    #ask_MO2 = (df.iloc[:, 5:6] >= 1) == (df.iloc[:, 3:4] >= 1)
-    mask_MO2 = (df.iloc[:, 5:6]) == (df.iloc[:, 3:4])
-    # TODO Исправить ошибку: Можно сравнивать только объекты DataFrame с одинаковой меткой
-    print (mask_MO2)
-    #mask_MO2.to_excel('test2.xlsx')
+
+    # Добавляем к ДМОср остаток от МО подразделения
+    df['ДМОср тех'] =(df.iloc[:, 5] % 1)
+    df['ДМОср тех'] = df['ДМОср тех'] + df['ДМОср']
+
+    # Подставляем в ДМОср значения МО если 0<МО<1
+    df['МО перенос'] = df['ДМОср']
+    df['МО перенос'] = df['МО перенос'].mask((df['ДМОср'] == 0), 0.33)
+    mask_MO1 = (df.iloc[:, 5] >= 1).values & (df['ДМОср'] >= 1).values
+    df['МО перенос'] = df['МО перенос'].mask(mask_MO1, df['ДМОср тех'].values)
+    mask_MO2 = (df.iloc[:, 5] > 0) & (df.iloc[:, 5] < 1)
+    df['МО перенос'] = df['МО перенос'].mask(mask_MO2.values, df.iloc[:, 5].values)
+    df = df.drop(['ДМОср тех'], axis=1)
+    df['Расхождения'] = df['МО перенос'] - df.iloc[:, 5]
+    df['Номенклатура'] = df.index
+    df.set_index(['Код', 'Номенклатура'], inplace=True)
+    print (df.iloc[255:260, 6])
+    #print (df.iloc[:10, [6,7]])
+
+    df.to_excel('test2.xlsx')
 
 if __name__ == '__main__':
     Run()
