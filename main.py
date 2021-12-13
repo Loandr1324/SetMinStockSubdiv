@@ -11,6 +11,7 @@ import os
 FOLDER = 'Исходные данные'
 SALES_NAME = 'ОТ'
 MIN_STOCK_NAME = 'МО'
+NEW_FILE_NAME= 'Анализ установленного МО.xlsx'
 
 
 def Run():
@@ -21,7 +22,9 @@ def Run():
     df_minStock = create_df (minStockFilelist, MIN_STOCK_NAME)
     df_general = concat_df (df_sales, df_minStock)
     df_general = transfer_MO (df_general)
-    #df_general.to_excel('test.xlsx')
+    #df_general.to_excel(NEW_FILE_NAME)
+    df_write_xlsx(df_general)
+
 
 def search_file(name):
     """
@@ -204,10 +207,134 @@ def transfer_MO (df):
     df['Расхождения'] = df['МО перенос'] - df.iloc[:, 5]
     df['Номенклатура'] = df.index
     df.set_index(['Код', 'Номенклатура'], inplace=True)
-    print (df.iloc[255:260, 6])
+    #print (df.iloc[255:260, 6])
     #print (df.iloc[:10, [6,7]])
 
-    df.to_excel('test2.xlsx')
+    #df.to_excel('test2.xlsx')
+    return df
+
+def df_write_xlsx(df):
+    # Сохраняем в переменные значения конечных строк и столбцов
+    row_end, col_end = len(df), len(df.columns)
+    row_end_str, col_end_str = str(row_end), str(col_end)
+
+    # Сбрасываем встроенный формат заголовков pandas
+    pd.io.formats.excel.ExcelFormatter.header_style = None
+
+    # Создаём эксель и сохраняем данные
+    name_file = NEW_FILE_NAME
+    sheet_name = 'Данные'  # Наименование вкладки для сводной таблицы
+    writer = pd.ExcelWriter(name_file, engine='xlsxwriter')
+    workbook = writer.book
+    df.to_excel(writer, sheet_name=sheet_name)
+    wks1 = writer.sheets[sheet_name]  # Сохраняем в переменную вкладку для форматирования
+
+    # Получаем словари форматов для эксель
+    header_format, con_format, border_storage_format_left, border_storage_format_right, \
+    name_format, MO_format, data_format = format_custom(workbook)
+
+    # Форматируем таблицу
+    wks1.set_default_row(12)
+    wks1.set_row(0, 20, header_format)
+    wks1.set_column('A:A', 12, name_format)
+    wks1.set_column('B:B', 32, name_format)
+    wks1.set_column('C:H', 10, data_format)
+    wks1.set_column('I:I', 12, data_format)
+
+    # Делаем жирным рамку между складами и форматируем колонку с МО по всем складам
+    wks1.set_column(2, 2, None, border_storage_format_left)
+    wks1.set_column(5, 5, None, border_storage_format_right)
+    wks1.set_column(6, 6, None, border_storage_format_left)
+    wks1.set_column(7, 7, None, border_storage_format_right)
+    wks1.set_column(7, 7, None, MO_format)
+
+    # Добавляем фильтр в первую колонку
+    wks1.autofilter(0, 0, row_end+1, col_end+1)
+
+    # Сохраняем файл
+    writer.save()
+    return
+
+def format_custom(workbook):
+    header_format = workbook.add_format({
+        'font_name': 'Arial',
+        'font_size': '7',
+        'align': 'center',
+        'valign': 'top',
+        'text_wrap': True,
+        'bold': True,
+        'bg_color': '#F4ECC5',
+        'border': True,
+        'border_color': '#CCC085'
+    })
+
+    border_storage_format_left = workbook.add_format({
+        'num_format': '# ### ##0.00',
+        'font_name': 'Arial',
+        'font_size': '8',
+        'left': 2,
+        'left_color': '#000000',
+        'bottom': True,
+        'bottom_color': '#CCC085',
+        'top': True,
+        'top_color': '#CCC085',
+        'right': True,
+        'right_color': '#CCC085',
+    })
+    border_storage_format_right = workbook.add_format({
+        'num_format': '# ### ##0.00',
+        'font_name': 'Arial',
+        'font_size': '8',
+        'right': 2,
+        'right_color': '#000000',
+        'bottom': True,
+        'bottom_color': '#CCC085',
+        'top': True,
+        'top_color': '#CCC085',
+        'left': True,
+        'left_color': '#CCC085',
+    })
+
+    name_format = workbook.add_format({
+        'font_name': 'Arial',
+        'font_size': '8',
+        'align': 'left',
+        'valign': 'top',
+        'text_wrap': True,
+        'bold': False,
+        'border': True,
+        'border_color': '#CCC085'
+    })
+
+    MO_format = workbook.add_format({
+        'num_format': '# ### ##0.00;;',
+        'bold': True,
+        'font_name': 'Arial',
+        'font_size': '8',
+        'font_color': '#FF0000',
+        'right': 2,
+        'right_color': '#000000',
+        'bottom': True,
+        'bottom_color': '#CCC085',
+        'top': True,
+        'top_color': '#CCC085',
+        'left': True,
+        'left_color': '#CCC085',
+    })
+    data_format = workbook.add_format({
+        'num_format': '# ### ##0.00',
+        'font_name': 'Arial',
+        'font_size': '8',
+        'text_wrap': True,
+        'border': True,
+        'border_color': '#CCC085'
+    })
+    con_format = workbook.add_format({
+        'bg_color': '#FED69C',
+    })
+
+    return header_format, con_format, border_storage_format_left, border_storage_format_right, \
+           name_format, MO_format, data_format
 
 if __name__ == '__main__':
     Run()
