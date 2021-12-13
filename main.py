@@ -163,14 +163,19 @@ def bug_fix (file_name):
     """
     import shutil
     from zipfile import ZipFile
+    from rarfile import RarFile
 
     # Создаем временную папку
     tmp_folder = '/temp/'
     os.makedirs(tmp_folder, exist_ok=True)
 
     # Распаковываем excel как zip в нашу временную папку и удаляем excel
-    with ZipFile(file_name) as excel_container:
-        excel_container.extractall(tmp_folder)
+    try:
+        with ZipFile(file_name) as excel_container:
+            excel_container.extractall(tmp_folder)
+    except:
+        with RarFile(file_name) as excel_container:
+            excel_container.extractall(tmp_folder)
     os.remove(file_name)
 
     # Переименовываем файл с неверным названием
@@ -179,7 +184,10 @@ def bug_fix (file_name):
     os.rename(wrong_file_path, correct_file_path)
 
     # Запаковываем excel обратно в zip и переименовываем в исходный файл
-    shutil.make_archive(f'{FOLDER}/correct_file', 'zip', tmp_folder)
+    try:
+        shutil.make_archive(f'{FOLDER}/correct_file', 'zip', tmp_folder)
+    except:
+        shutil.make_archive(f'{FOLDER}/correct_file', 'rar', tmp_folder)
     os.rename(f'{FOLDER}/correct_file.zip', file_name)
 
 def concat_df (df1, df2):
