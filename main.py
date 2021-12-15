@@ -22,7 +22,6 @@ def Run():
     df_minStock = create_df (minStockFilelist, MIN_STOCK_NAME)
     df_general = concat_df (df_sales, df_minStock)
     df_general = transfer_MO (df_general)
-    #df_general.to_excel(NEW_FILE_NAME)
     df_write_xlsx(df_general)
 
 
@@ -109,7 +108,7 @@ def create_df (file_list, add_name):
                 for cell in row:
                     if crat in str(cell.comment) and i == 1:
                         index = str(cell.comment).find(crat)
-                        value_crat = int(str(cell.comment)[index + 14])
+                        value_crat = int(str(cell.comment)[index + 14 : index + 16])
                         df_multiplicity.loc[len(df_multiplicity)] = [row[4].value, value_crat]
                         i += 1
             df_multiplicity.set_index(['Номенклатура'], inplace=True)
