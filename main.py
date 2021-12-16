@@ -84,9 +84,10 @@ def create_df (file_list, add_name):
             # Преобразуем Dataframe согласно маски. После обработки все значения будут NaN кроме нужного нам.
             # В этой же строке кода удаляем все строки со значением NaN и далее получаем индекс оставшейся строки
             f = df[mask].dropna(axis=0, how='all').index.values  # Удаление пустых колонок, если axis=0, то строк
+            col = df[mask].dropna(axis=1, how='all').columns.values
             df = df.iloc[int(f) + 1:, :]  # Убираем все строки с верха DF до заголовков
+            df.iloc[0, col] = 'Номенклатура'
             df = df.dropna(axis=1, how='all')  # Убираем пустые колонки
-            df.iloc[0, 3] = 'Номенклатура'
             # Значения из найденной строки переносим в заголовки DataFrame для простоты дальнейшего обращения
             df.columns = df.iloc[0]
             df.columns.name = None
