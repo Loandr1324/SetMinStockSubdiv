@@ -45,10 +45,10 @@ def create_df (file_list, add_name):
     :return: df_result Дата фрэйм с данными из файлов
     """
     #df_result = []
-
     for filename in file_list: # проходим по каждому элементу списка файлов
         print (filename) # для тестов выводим в консоль наименование файла с которым проходит работа
         df = read_my_excel(filename)
+
         if add_name == MIN_STOCK_NAME:
             df_search_header = df.iloc[:15, :2] # для ускорения работы выбираем из DataFrame первую колонку и 15 строк
             # print (df_search_header)
@@ -74,7 +74,6 @@ def create_df (file_list, add_name):
             #return df.to_excel('test.xlsx')
 
         # Добавляем преобразованный DF в результирующий DF
-        #df_result = concat_df(df_result, df)
 
         # Добавляем в результирующий DF по продажам расчётные данные
         elif add_name == SALES_NAME:
@@ -112,13 +111,18 @@ def create_df (file_list, add_name):
                         value_crat = int(str(cell.comment)[index + 14 : index + 16])
                         df_multiplicity.loc[len(df_multiplicity)] = [row[4].value, value_crat]
                         i += 1
+            df_multiplicity['Номенклатура'] = df_multiplicity['Номенклатура'].str.strip()  # Удалить пробелы с обоих концов строки в ячейке
             df_multiplicity.set_index(['Номенклатура'], inplace=True)
             #df_multiplicity.to_excel('test1.xlsx')
             #df = pd.concat([df, df_multiplicity], axis=1, ignore_index=False)
             df = concat_df(df, df_multiplicity)
             df['Кратность'] = df['Кратность'].fillna(1)
+            df['ДМО'] = df['ДМО'].str.replace(',', '.').astype(
+                float)  # заменяем запятые на точки и преобразуем в числовой формат
+            df['ДМОk'] = df['ДМОk'].str.replace(',', '.').astype(
+                float)  # заменяем запятые на точки и преобразуем в числовой формат
+
             df[['ДМО','ДМОk']] = df[['ДМО','ДМОk']].fillna(0)
-            #df['ДМОср_тех'] = (df['ДМО'] + df['ДМОk']) / 2 # создаём базовое среднее для проверки
             df['ДМОср'] = round((df['ДМО'] + df['ДМОk'] + 0.00000001) / 2) # округляем по мат. правилам
             df['ДМОср'] = round((df['ДМОср'] + 0.00000001) / df['Кратность']) * df['Кратность'] # округляем до кратности
             mask_05 = df['ДМОk'] == 0.5
@@ -195,7 +199,8 @@ def concat_df (df1, df2):
     return df
 
 def transfer_MO (df):
-    #rint (df.head())
+    #print (df.head())
+    #print (df.info())
     #print (df.iloc[:5, 5])
 
     # =ЕСЛИ(И(C3>0;C3<1);C3;ЕСЛИ(И(C3>=1;H3>=1);H3+ОСТАТ(C3;1);ЕСЛИ(H3=0;0,33;H3)))
