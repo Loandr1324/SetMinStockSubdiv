@@ -24,7 +24,6 @@ def Run():
     df_general = transfer_MO (df_general)
     df_write_xlsx(df_general)
 
-
 def search_file(name):
     """
     :param name: Поиск всех файлов в папке FOLDER, в наименовании которых, содержится name
@@ -117,10 +116,15 @@ def create_df (file_list, add_name):
             #df = pd.concat([df, df_multiplicity], axis=1, ignore_index=False)
             df = concat_df(df, df_multiplicity)
             df['Кратность'] = df['Кратность'].fillna(1)
-            df['ДМО'] = df['ДМО'].str.replace(',', '.').astype(
-                float)  # заменяем запятые на точки и преобразуем в числовой формат
-            df['ДМОk'] = df['ДМОk'].str.replace(',', '.').astype(
-                float)  # заменяем запятые на точки и преобразуем в числовой формат
+
+            try:
+                df['ДМО'] = df['ДМО'].str.replace(',', '.').astype(
+                     float)  # заменяем запятые на точки и преобразуем в числовой формат
+                df['ДМОk'] = df['ДМОk'].str.replace(',', '.').astype(
+                     float)  # заменяем запятые на точки и преобразуем в числовой формат
+                print('Заменили тип данных с текст на число в колнках ДМО и ДМОk')
+            except:
+                print('Колнки ДМО и ДМОk не требуют преобразований')
 
             df[['ДМО','ДМОk']] = df[['ДМО','ДМОk']].fillna(0)
             df['ДМОср'] = round((df['ДМО'] + df['ДМОk'] + 0.00000001) / 2) # округляем по мат. правилам
