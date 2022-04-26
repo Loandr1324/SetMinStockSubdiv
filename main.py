@@ -110,7 +110,11 @@ def create_df (file_list, add_name):
                         value_crat = int(str(cell.comment)[index + 14 : index + 16])
                         df_multiplicity.loc[len(df_multiplicity)] = [row[4].value, value_crat]
                         i += 1
-            df_multiplicity['Номенклатура'] = df_multiplicity['Номенклатура'].str.strip()  # Удалить пробелы с обоих концов строки в ячейке
+            try:
+                df_multiplicity['Номенклатура'] = df_multiplicity['Номенклатура'].str.strip()  # Удалить пробелы с обоих концов строки в ячейке
+                print('Удаляем пробелы из Номенклатуры для сопоставления')
+            except:
+                print('Нет пробелов в Номенклатуре')
             df_multiplicity.set_index(['Номенклатура'], inplace=True)
             #df_multiplicity.to_excel('test1.xlsx')
             #df = pd.concat([df, df_multiplicity], axis=1, ignore_index=False)
