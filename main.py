@@ -244,50 +244,51 @@ def transfer_MO(df):
     # print(df.iloc[255:260, 6])
     # print(df.iloc[:10, [6, 7]])
 
-    df.to_excel('test2.xlsx')
+    # df.to_excel('test2.xlsx')
     return df
 
 
 def df_write_xlsx(df):
     # Сохраняем в переменные значения конечных строк и столбцов
     row_end, col_end = len(df), len(df.columns)
-    row_end_str, col_end_str = str(row_end), str(col_end)
 
-    # Сбрасываем встроенный формат заголовков pandas
-    pd.io.formats.excel.ExcelFormatter.header_style = None
+    # Настраиваем формат заголовков pandas
+    df.reset_index(inplace=True)
+    df = df.style
+    header_format1 = "font-family:Arial; font-size:9px; text-align:center; vertical-align:top; text-wrap:True; " \
+                     "font-weight:bold; background-color:#F4ECC5; border:1px solid #CCC085;"
+    df.applymap_index(lambda v: header_format1, axis=1)
 
     # Создаём эксель и сохраняем данные
     name_file = NEW_FILE_NAME
     sheet_name = 'Данные'  # Наименование вкладки для сводной таблицы
-    writer = pd.ExcelWriter(name_file, engine='xlsxwriter')
-    workbook = writer.book
-    df.to_excel(writer, sheet_name=sheet_name)
-    wks1 = writer.sheets[sheet_name]  # Сохраняем в переменную вкладку для форматирования
+    with pd.ExcelWriter(name_file, engine='xlsxwriter') as writer:
+        workbook = writer.book
+        df.to_excel(writer, index=False, sheet_name=sheet_name)
+        wks1 = writer.sheets[sheet_name]  # Сохраняем в переменную вкладку для форматирования
 
-    # Получаем словари форматов для эксель
-    header_format, con_format, border_storage_format_left, border_storage_format_right, \
-    name_format, MO_format, data_format = format_custom(workbook)
+        # Получаем словари форматов для эксель
+        header_format, con_format, border_storage_format_left, border_storage_format_right, \
+        name_format, MO_format, data_format = format_custom(workbook)
 
-    # Форматируем таблицу
-    wks1.set_default_row(12)
-    wks1.set_row(0, 20, header_format)
-    wks1.set_column('A:A', 12, name_format)
-    wks1.set_column('B:B', 32, name_format)
-    wks1.set_column('C:H', 10, data_format)
-    wks1.set_column('I:I', 12, data_format)
+        # Форматируем таблицу
+        wks1.set_default_row(12)
+        wks1.set_row(0, 20, None)
+        wks1.set_column('A:A', 12, name_format)
+        wks1.set_column('B:B', 32, name_format)
+        wks1.set_column('C:H', 10, data_format)
+        wks1.set_column('I:I', 12, data_format)
 
-    # Делаем жирным рамку между складами и форматируем колонку с МО по всем складам
-    wks1.set_column(2, 2, None, border_storage_format_left)
-    wks1.set_column(5, 5, None, border_storage_format_right)
-    wks1.set_column(6, 6, None, border_storage_format_left)
-    wks1.set_column(7, 7, None, border_storage_format_right)
-    wks1.set_column(7, 7, None, MO_format)
+        # Делаем жирным рамку между складами и форматируем колонку с МО по всем складам
+        wks1.set_column(2, 2, None, border_storage_format_left)
+        wks1.set_column(5, 5, None, border_storage_format_right)
+        wks1.set_column(6, 6, None, border_storage_format_left)
+        wks1.set_column(7, 7, None, border_storage_format_right)
+        wks1.set_column(7, 7, None, MO_format)
 
-    # Добавляем фильтр в первую колонку
-    wks1.autofilter(0, 0, row_end + 1, col_end + 1)
+        # Добавляем фильтр в первую колонку
+        wks1.autofilter(0, 0, row_end + 1, col_end + 1)
 
-    # Сохраняем файл
-    writer.save()
     return
 
 
