@@ -7,22 +7,21 @@
 import pandas as pd
 import os
 
-
 FOLDER = 'Исходные данные'
 SALES_NAME = 'ОТ'
 MIN_STOCK_NAME = 'МО'
-NEW_FILE_NAME= 'Анализ установленного МО.xlsx'
+NEW_FILE_NAME = 'Анализ установленного МО.xlsx'
 
 
 def Run():
-
     salesFilelist = search_file(SALES_NAME)  # запускаем функцию по поиску файлов и получаем список файлов
     minStockFilelist = search_file(MIN_STOCK_NAME)  # запускаем функцию по поиску файлов и получаем список файлов
-    df_sales = create_df (salesFilelist, SALES_NAME)
-    df_minStock = create_df (minStockFilelist, MIN_STOCK_NAME)
-    df_general = concat_df (df_sales, df_minStock)
-    df_general = transfer_MO (df_general)
+    df_sales = create_df(salesFilelist, SALES_NAME)
+    df_minStock = create_df(minStockFilelist, MIN_STOCK_NAME)
+    df_general = concat_df(df_sales, df_minStock)
+    df_general = transfer_MO(df_general)
     df_write_xlsx(df_general)
+
 
 def search_file(name):
     """
@@ -31,52 +30,56 @@ def search_file(name):
     """
     filelist = []
     for item in os.listdir(FOLDER):
-        if name in item and item.endswith('.xlsx'): # если файл содержит name и с расширенитем .xlsx, то выполняем
-            filelist.append(FOLDER + "/" + item) # добаляем в список папку и имя файла для последующего обращения из списка
+        if name in item and item.endswith('.xlsx'):  # если файл содержит name и с расширением .xlsx, то выполняем
+            # Добавляем в список папку и имя файла для последующего обращения из списка
+            filelist.append(FOLDER + "/" + item)
         else:
             pass
     return filelist
 
-def create_df (file_list, add_name):
+
+def create_df(file_list, add_name):
     """
     :param file_list: Загружаем в DataFrame файлы из file_list
     :param add_name: Добавляем add_name в наименование колонок DataFrame
     :return: df_result Дата фрэйм с данными из файлов
     """
-    #df_result = []
-    for filename in file_list: # проходим по каждому элементу списка файлов
-        print (filename) # для тестов выводим в консоль наименование файла с которым проходит работа
+    df = pd.DataFrame()
+    for filename in file_list:  # проходим по каждому элементу списка файлов
+        # print(filename)  # для тестов выводим в консоль наименование файла с которым проходит работа
         df = read_my_excel(filename)
 
         if add_name == MIN_STOCK_NAME:
-            df_search_header = df.iloc[:15, :2] # для ускорения работы выбираем из DataFrame первую колонку и 15 строк
+            df_search_header = df.iloc[:15, :2]  # для ускорения работы выбираем из DataFrame первую колонку и 15 строк
             # print (df_search_header)
             # создаём маску и отмечаем True строку где есть слово "Номенклатура", остальные False
             mask = (df_search_header == 'Номенклатура')
             # Преобразуем Dataframe согласно маски. После обработки все значения будут NaN кроме нужного нам.
             # В этой же строке кода удаляем все строки со значением NaN и далее получаем индекс оставшейся строки
-            f = df_search_header[mask].dropna(axis=0, how='all').index.values # Удаление пустых колонок, если axis=0, то строк
+            f = df_search_header[mask].dropna(axis=0,
+                                              how='all').index.values  # Удаление пустых колонок, если axis=0, то строк
             # print (df.iloc[:15, :2])
-            df = df.iloc[int(f):, :] # Убираем все строки с верха DF до заголовков
+            df = df.iloc[int(f):, :]  # Убираем все строки с верха DF до заголовков
             df = df.dropna(axis=1, how='all')  # Убираем пустые колонки
-            #df.iloc[0, :] = df.iloc[0, :] + ' ' + add_name # Добавляем в наименование тип данных
+            # df.iloc[0, :] = df.iloc[0, :] + ' ' + add_name # Добавляем в наименование тип данных
             df.iloc[0, 0] = 'Код'
             df.iloc[0, 1] = 'Номенклатура'
-            df.columns = df.iloc[0] # Значения из найденной строки переносим в заголовки DataFrame для простоты дальнейшего обращения
+            df.columns = df.iloc[
+                0]  # Значения из найденной строки переносим в заголовки DataFrame для простоты дальнейшего обращения
             df.columns.name = None
-            df = df.iloc[2:, :] # Убираем две строки с верха DF
-            df['Номенклатура'] = df['Номенклатура'].str.strip() # Удалить пробелы с обоих концов строки в ячейке
-            df.set_index(['Номенклатура'], inplace=True) # переносим колонки в индекс, для упрощения дальнейшей работы
+            df = df.iloc[2:, :]  # Убираем две строки с верха DF
+            df['Номенклатура'] = df['Номенклатура'].str.strip()  # Удалить пробелы с обоих концов строки в ячейке
+            df.set_index(['Номенклатура'], inplace=True)  # переносим колонки в индекс, для упрощения дальнейшей работы
             df.iloc[:, 1:2] = df.iloc[:, 1:2].fillna(0)
 
-            #print (df.iloc[:10, 1:2])
-            #return df.to_excel('test.xlsx')
+            # print (df.iloc[:10, 1:2])
+            # return df.to_excel('test.xlsx')
 
         # Добавляем преобразованный DF в результирующий DF
 
         # Добавляем в результирующий DF по продажам расчётные данные
         elif add_name == SALES_NAME:
-            df_search_header = df.iloc[:15, :5]  # для ускорения работы выбираем из DataFrame первую колонку и 15 строк
+            df_search_header = df.iloc[:15, :6]  # для ускорения работы выбираем из DataFrame первую колонку и 15 строк
             # создаём маску и отмечаем True строку где есть слово "Номенклатура", остальные False
             mask = (df_search_header == 'Номенклатура')
             # Преобразуем Dataframe согласно маски. После обработки все значения будут NaN кроме нужного нам.
@@ -102,52 +105,59 @@ def create_df (file_list, add_name):
             ws = wb["TDSheet"]  # or whatever sheet name
             crat = 'Кратность'
             for row in ws.rows:
-                value_crat = 1
                 i = 1
+                value_crat = 1
                 for cell in row:
                     if crat in str(cell.comment) and i == 1:
                         index = str(cell.comment).find(crat)
-                        value_crat = int(str(cell.comment)[index + 14 : index + 16])
-                        df_multiplicity.loc[len(df_multiplicity)] = [row[4].value, value_crat]
+                        value_crat = int(str(cell.comment)[index + 14: index + 16])
                         i += 1
+
+                value = row[5].value
+                if value is not None and value != 'Номенклатура':
+                    df_multiplicity.loc[len(df_multiplicity)] = [value, value_crat]
+
             try:
-                df_multiplicity['Номенклатура'] = df_multiplicity['Номенклатура'].str.strip()  # Удалить пробелы с обоих концов строки в ячейке
+                # Удалить пробелы с обоих концов строки в ячейке
+                df_multiplicity['Номенклатура'] = df_multiplicity['Номенклатура'].str.strip()
                 print('Удаляем пробелы из Номенклатуры для сопоставления')
             except:
                 print('Нет пробелов в Номенклатуре')
             df_multiplicity.set_index(['Номенклатура'], inplace=True)
-            #df_multiplicity.to_excel('test1.xlsx')
-            #df = pd.concat([df, df_multiplicity], axis=1, ignore_index=False)
+            # df_multiplicity.to_excel('test1.xlsx')
+            # df = pd.concat([df, df_multiplicity], axis=1, ignore_index=False)
             df = concat_df(df, df_multiplicity)
             df['Кратность'] = df['Кратность'].fillna(1)
 
             try:
                 df['ДМО'] = df['ДМО'].str.replace(',', '.').astype(
-                     float)  # заменяем запятые на точки и преобразуем в числовой формат
+                    float)  # заменяем запятые на точки и преобразуем в числовой формат
                 df['ДМОk'] = df['ДМОk'].str.replace(',', '.').astype(
-                     float)  # заменяем запятые на точки и преобразуем в числовой формат
+                    float)  # заменяем запятые на точки и преобразуем в числовой формат
                 print('Заменили тип данных с текст на число в колнках ДМО и ДМОk')
             except:
                 print('Колнки ДМО и ДМОk не требуют преобразований')
 
-            df[['ДМО','ДМОk']] = df[['ДМО','ДМОk']].fillna(0)
-            df['ДМОср'] = round((df['ДМО'] + df['ДМОk'] + 0.00000001) / 2) # округляем по мат. правилам
-            df['ДМОср'] = round((df['ДМОср'] + 0.00000001) / df['Кратность']) * df['Кратность'] # округляем до кратности
+            df[['ДМО', 'ДМОk']] = df[['ДМО', 'ДМОk']].fillna(0)
+            df['ДМОср'] = round((df['ДМО'] + df['ДМОk'] + 0.00000001) / 2)  # округляем по мат. правилам
+            df['ДМОср'] = round((df['ДМОср'] + 0.00000001) / df['Кратность']) * df[
+                'Кратность']  # округляем до кратности
             mask_05 = df['ДМОk'] == 0.5
             df['ДМОср'] = df['ДМОср'].mask(mask_05, 0.5)
 
-            #df.to_excel('test.xlsx')
+            # df.to_excel('test.xlsx')
             # TODO Объединить с фалом продаж
-        #df_result = payment(df_result)
+        # df_result = payment(df_result)
     return df
 
-def read_my_excel (file_name):
+
+def read_my_excel(file_name):
     """
     Пытаемся прочитать файл xlxs, если не получается, то исправляем ошибку и опять читаем файл
     :param file_name: Имя файла для чтения
     :return: DataFrame
     """
-    print ('Попытка загрузки файла:'+file_name)
+    print('Попытка загрузки файла:' + file_name)
     try:
         if SALES_NAME in file_name:
             df = pd.read_excel(file_name, sheet_name='TDSheet', header=None, skipfooter=1, engine='openpyxl')
@@ -155,10 +165,10 @@ def read_my_excel (file_name):
             df = pd.read_excel(file_name, sheet_name='TDSheet', header=None, skipfooter=0, engine='openpyxl')
         return (df)
     except KeyError as Error:
-        print (Error)
+        print(Error)
         df = None
         if str(Error) == "\"There is no item named 'xl/sharedStrings.xml' in the archive\"":
-            bug_fix (file_name)
+            bug_fix(file_name)
             print('Исправлена ошибка: ', Error, f'в файле: \"{file_name}\"\n')
             if SALES_NAME in file_name:
                 df = pd.read_excel(file_name, sheet_name='TDSheet', header=None, skipfooter=1, engine='openpyxl')
@@ -168,7 +178,8 @@ def read_my_excel (file_name):
         else:
             print('Ошибка: >>' + str(Error) + '<<')
 
-def bug_fix (file_name):
+
+def bug_fix(file_name):
     """
     Переименовываем не корректное имя файла в архиве excel
     :param file_name: Имя excel файла
@@ -202,19 +213,21 @@ def bug_fix (file_name):
         shutil.make_archive(f'{FOLDER}/correct_file', 'rar', tmp_folder)
     os.rename(f'{FOLDER}/correct_file.zip', file_name)
 
-def concat_df (df1, df2):
-    df = pd.concat([df1, df2], axis=1, ignore_index=False, levels=['Номенклатура'])
+
+def concat_df(df1, df2):
+    df = pd.concat([df1, df2], axis=1, ignore_index=False)
     return df
 
-def transfer_MO (df):
-    #print (df.head())
-    #print (df.info())
-    #print (df.iloc[:5, 5])
+
+def transfer_MO(df):
+    # print(df.head())
+    # print(df.info())
+    # print(df.iloc[:5, :])
 
     # =ЕСЛИ(И(C3>0;C3<1);C3;ЕСЛИ(И(C3>=1;H3>=1);H3+ОСТАТ(C3;1);ЕСЛИ(H3=0;0,33;H3)))
 
     # Добавляем к ДМОср остаток от МО подразделения
-    df['ДМОср тех'] =(df.iloc[:, 5] % 1)
+    df['ДМОср тех'] = (df.iloc[:, 5] % 1)
     df['ДМОср тех'] = df['ДМОср тех'] + df['ДМОср']
 
     # Подставляем в ДМОср значения МО если 0<МО<1
@@ -228,11 +241,12 @@ def transfer_MO (df):
     df['Расхождения'] = df['МО перенос'] - df.iloc[:, 5]
     df['Номенклатура'] = df.index
     df.set_index(['Код', 'Номенклатура'], inplace=True)
-    #print (df.iloc[255:260, 6])
-    #print (df.iloc[:10, [6,7]])
+    # print(df.iloc[255:260, 6])
+    # print(df.iloc[:10, [6, 7]])
 
-    #df.to_excel('test2.xlsx')
+    df.to_excel('test2.xlsx')
     return df
+
 
 def df_write_xlsx(df):
     # Сохраняем в переменные значения конечных строк и столбцов
@@ -270,11 +284,12 @@ def df_write_xlsx(df):
     wks1.set_column(7, 7, None, MO_format)
 
     # Добавляем фильтр в первую колонку
-    wks1.autofilter(0, 0, row_end+1, col_end+1)
+    wks1.autofilter(0, 0, row_end + 1, col_end + 1)
 
     # Сохраняем файл
     writer.save()
     return
+
 
 def format_custom(workbook):
     header_format = workbook.add_format({
@@ -357,6 +372,6 @@ def format_custom(workbook):
     return header_format, con_format, border_storage_format_left, border_storage_format_right, \
            name_format, MO_format, data_format
 
+
 if __name__ == '__main__':
     Run()
-
